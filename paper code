@@ -1,0 +1,121 @@
+#PRSice-2 (version 2.3.5)
+#R (version 4.3.0)
+############################################################################################################
+###############################################PRS calculation##############################################
+############################################################################################################
+cd /path/PRSice_linux
+nohup ./PRSice_linux --base trs_interaction.sumstats.txt --snp SNP –chr CHR --bp BP --A1 A1 --A2 A2 --stat OR --pvalue P --target-list chr.txt --keep kingunrelated.txt --thread 1 --beta --binary-target F --pheno phenoTRS_20230507.txt --lower 5e-08 --interval 0.01 --model add --score avg --perm 10000 --clump-kb 500 --clump-r2 0.2 --cov covar.txt --all-score --out trs230507 &
+nohup ./PRSice_linux --base trs_interaction.sumstats.txt --snp SNP –chr CHR --bp BP --A1 A1 --A2 A2 --stat OR --pvalue P --target-list chr.txt --keep kingunrelated.txt --thread 1 --beta --binary-target F --pheno phenoTRS_20230507.txt --lower 5e-08 --interval 0.01 --model add --score avg --perm 10000 --clump-kb 500 --clump-r2 0.2 --cov covar.txt --all-score --out trs230507 --extract trs230507.valid &
+
+
+############################################################################################################
+##############################################AUC and R2 plotting###########################################
+############################################################################################################
+library(pROC)
+library(ggplot2)
+rm(list=ls())
+options(stringsAsFactors = F)
+setwd("E:/path")
+prs <- read.table("E:/path/trs230525.best", header=T)
+trs_pheno <- read.table("phenoTRS_20230507.txt", header=T)
+dat_f <- merge(prs, trs_pheno, by="FID")
+test_ROC <- roc(dat_f$pheno, dat_f$PRS, levels = c("0","1"),smooth = F)
+auc(test_ROC)[1]
+ci(test_ROC,of="auc")[1]
+ci(test_ROC,of="auc")[3]
+cutOffPoint <- coords(test_ROC, "best")
+cutOffPointText <- paste0(round(cutOffPoint[1],3),"(",round(cutOffPoint[2],3),",",round(cutOffPoint[3],3),")")
+ciobj <- ci.se(test_ROC,specificities=seq(0, 1, 0.01))
+data_ci<-ciobj[1:101,1:3]
+data_ci<-as.data.frame(data_ci)
+x=as.numeric(rownames(data_ci))
+data_ci<-data.frame(x,data_ci)
+test_p <- ggroc(test_ROC,
+      color="red",
+      size=1,
+      legacy.axes = T
+)+
+  theme_classic()+
+  geom_segment(aes(x = 0, y = 0, xend = 1, yend = 1),
+               colour='grey', 
+               linetype = 'dotdash'
+  ) +
+  geom_ribbon(data = data_ci,
+              aes(x=1-x,ymin=X2.5.,ymax=X97.5.),
+              fill = 'lightblue',
+              alpha=0.5)+
+  geom_point(aes(x = cutOffPoint[[3]],y = cutOffPoint[[2]]))+
+  geom_text(aes(x = cutOffPoint[[3]],y = cutOffPoint[[2]],label=cutOffPointText),vjust=-1)
+
+ggsave(
+  filename = "test_p.png",
+  width = 5,
+  height = 5,
+  units = "in",
+  dpi = 600
+)
+
+prs_p <- read.table("E:/path/trs230525.prsice", header=T)
+library(ggpubr)
+prs_decr <- prs_p[order(prs_p$R2,decreasing = T),]
+pp <- ggscatter(prs_p, x = "Threshold", y = "R2",
+          color = "P", size = 2,
+          add.params = list(color = "red", fill = "lightgray"),
+          conf.int = F,
+          cor.coef = F,
+          xlab="P value threshold", ylab="PRS model fit: R2",
+          ylim = c(0, 0.008)
+)
+pp+gradient_color("RdYlBu")
+ggsave(
+  filename = "prsR2.png",
+  width = 5,
+  height = 5,
+  units = "in",
+  dpi = 600
+)
+
+}
+
+############################################################################################################
+############################################Residual calculation############################################
+############################################################################################################
+cd /path
+R
+rm(list=ls())
+options(stringsAsFactors = F)
+library("readr")
+trsprs <- read.table("/path/trs230525.best",header = T)
+covar <- read.table("/path/covar.txt",header = T)
+temp <- merge(trsprs, covar, "IID")
+head(temp)
+temp_prspc <- na.omit(temp[ , c(1,4,6:15)])
+temp1 <- as.formula("PRS ~ PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10")
+temp2 <- lm(temp1, data=temp_prspc)
+prs_res <- temp2$residuals
+temp4 <- cbind(temp_prspc[,c(1,2)], prs_res)
+stan_res <- rstandard(temp2)
+temp5 <- cbind(temp4, stan_res)
+write.table(temp5,file="trsprs_10pc_res_0814.txt",row.name=FALSE,quote=FALSE)
+
+
+cd /path
+R
+rm(list=ls())
+options(stringsAsFactors = F)
+library("readr")
+urine <- read_csv("/path/urine_unfadata.csv",col_names = T)
+covar <- read.table("/path/covar.txt",header = T)
+temp <- merge(urine, covar, "IID")
+temp_ur <- na.omit(temp[ , c(1,2,6,8:19)])
+temp1 <- as.formula("X30530.0.0 ~ age")
+temp2 <- lm(temp1, data=temp_ur)
+X30530.0.0 <- temp2$residuals
+temp4 <- cbind(temp_ur[,c(1:2)],X30530.0.0)
+write.table(temp4,file="X30530.0.0_nosex_res.txt",row.name=FALSE,quote=FALSE)
+blood <- read.table("/path/blood_unfadata.txt", header = T, sep=",")
+covar <- read.table("/path/Proj_trsPRS/covar.txt",header = T)
+temp <- merge(blood, covar, by.x ='eid',by.y ='IID')
+head(temp)
+for (i in (2:60)){
+    temp_bl <- na.o
