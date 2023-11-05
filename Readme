@@ -1,4 +1,4 @@
-This is the literature "Mendelian randomization study of the relationship between blood and urine biomarkers and schizophrenia in the UK Analysis code for Biobank cohort, all running on the Linux command line.
+This is the code of the literature "Mendelian randomization study of the relationship between blood and urine biomarkers and schizophrenia in the UK Biobank cohort", all running on the Linux command line.
 
 These analyses include PRS calculation, Residual calculation, Pearson correlation analysis and Mendelian randomization analyses.
 
