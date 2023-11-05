@@ -118,4 +118,226 @@ covar <- read.table("/path/Proj_trsPRS/covar.txt",header = T)
 temp <- merge(blood, covar, by.x ='eid',by.y ='IID')
 head(temp)
 for (i in (2:60)){
-    temp_bl <- na.o
+    temp_bl <- na.omit(temp[ , c(1,i,61:73)])
+	temp_bl <- subset(temp_bl, temp_bl[,2]!= -999)
+    temp1 <- as.formula("temp_bl[ ,2] ~ age")
+    temp2 <- lm(temp1, data=temp_bl)
+    temp3 <- temp2$residuals
+    temp4 <- cbind(temp_bl[,1],temp3)
+	colnames(temp4) <- c("IID", colnames(temp_bl)[2])
+    write.table(temp4,file=paste(i,"_nosex_res.txt",sep=""),row.name=FALSE,quote=FALSE)
+}
+dat_f <- read.table("2_nosex_res.txt",header = T)
+for(i in 3:60) 
+{
+  filename <- paste(i,"_nosex_res.txt",sep="")
+  dat_i <- read.table(filename,header = T)
+  dat_f <- merge(dat_f, dat_i, by="IID", all=T)
+}
+dat_f[1:6, ]
+dat_1 <- read.table("X30510.0.0_nosex_res.txt",header = T)
+dat_1 <- dat_1[, c(1,3)]
+dat_f <- merge(dat_f, dat_1, by="IID", all=T)
+dat_2 <- read.table("X30500.0.0_nosex_res.txt",header = T)
+dat_2 <- dat_2[, c(1,3)]
+dat_f <- merge(dat_f, dat_2, by="IID", all=T)
+dat_3 <- read.table("X30520.0.0_nosex_res.txt",header = T)
+dat_3 <- dat_3[, c(1,3)]
+dat_f <- merge(dat_f, dat_3, by="IID", all=T)
+dat_4 <- read.table("X30530.0.0_nosex_res.txt",header = T)
+dat_4 <- dat_4[, c(1,3)]
+dat_f <- merge(dat_f, dat_4, by="IID", all=T)
+dat_f[1:6, ]
+write.table(dat_f,file="bloodurine_nosex10pc_res_8.14.txt",row.names =F,quote =F)
+
+
+urine <- read_csv("/path/urine_unfadata.csv",col_names = T)
+covar <- read.table("/path/covar.txt",header = T)
+temp <- merge(urine, covar, "IID")
+temp_ur <- na.omit(temp[ , c(1,2,6,8:19)])
+temp1 <- as.formula("X30530.0.0 ~ age+sex")
+temp2 <- lm(temp1, data=temp_ur)
+X30530.0.0 <- temp2$residuals
+temp4 <- cbind(temp_ur[,c(1:2)],X30530.0.0)
+write.table(temp4,file="X30530.0.0_no10pc_res.txt",row.name=FALSE,quote=FALSE)
+blood <- read.table("/path/blood_unfadata.txt", header = T, sep=",")
+covar <- read.table("/path/covar.txt",header = T)
+temp <- merge(blood, covar, by.x ='eid',by.y ='IID')
+head(temp)
+for (i in (2:60)){
+    temp_bl <- na.omit(temp[ , c(1,i,61:73)])
+	temp_bl <- subset(temp_bl, temp_bl[,2]!= -999)
+    temp1 <- as.formula("temp_bl[ ,2] ~ age+sex")
+    temp2 <- lm(temp1, data=temp_bl)
+    temp3 <- temp2$residuals
+    temp4 <- cbind(temp_bl[,1],temp3)
+	colnames(temp4) <- c("IID", colnames(temp_bl)[2])
+    write.table(temp4,file=paste(i,"_no10pc_res.txt",sep=""),row.name=FALSE,quote=FALSE)
+}
+
+dat_f <- read.table("2_no10pc_res.txt",header = T)
+for(i in 3:60) 
+{
+  filename <- paste(i,"_no10pc_res.txt",sep="")
+  dat_i <- read.table(filename,header = T)
+  dat_f <- merge(dat_f, dat_i, by="IID", all=T)
+}
+dat_f[1:6, ]
+dat_1 <- read.table("X30510.0.0_no10pc_res.txt",header = T)
+dat_1 <- dat_1[, c(1,3)]
+dat_f <- merge(dat_f, dat_1, by="IID", all=T)
+dat_2 <- read.table("X30500.0.0_no10pc_res.txt",header = T)
+dat_2 <- dat_2[, c(1,3)]
+dat_f <- merge(dat_f, dat_2, by="IID", all=T)
+dat_3 <- read.table("X30520.0.0_no10pc_res.txt",header = T)
+dat_3 <- dat_3[, c(1,3)]
+dat_f <- merge(dat_f, dat_3, by="IID", all=T)
+dat_4 <- read.table("X30530.0.0_no10pc_res.txt",header = T)
+dat_4 <- dat_4[, c(1,3)]
+dat_f <- merge(dat_f, dat_4, by="IID", all=T)
+dat_f[1:6, ]
+write.table(dat_f,file="bloodurine_no10pc_res_8.14.txt",row.names =F,quote =F)
+
+
+############################################################################################################
+#############################################Pearson correlation analysis###################################
+############################################################################################################
+cd /path
+R
+rm(list=ls())
+options(stringsAsFactors = F)
+dat_res <- read.table("/path/bloodurine_no10pc_res_8.14.txt",header = T)
+covar <- read.table("/path/covar.txt",header = T)
+dat_prs <- read.table("/path/trsprs_10pc_res_0814.txt",header = T)
+covsex <- covar[, c(1,13)]
+dat_prs1 <- dat_prs[, c(1,4)]
+trsprs <- dplyr::inner_join(dat_prs1,covsex)
+trsprs_res <- dplyr::inner_join(trsprs,dat_res)
+for (i in (4:66)){
+  for (j in (2:2)){
+    tmp=cor.test(trsprs_res[,i],trsprs_res[,j],method = "pearson", alternative="two.side",conf.level = 0.95)
+    tmp5 <- tmp$estimate
+    tmp6 <- tmp$p.value 
+    tmp4=tmp$conf.int
+    tmp3=tmp[["statistic"]][["t"]]
+    write.table(cbind(paste(names(trsprs_res[i]), "_", names(trsprs_res[j]),sep=""),tmp5,tmp3,tmp6,tmp4[1],tmp4[2]),file="trsout_230814.txt",col.name=FALSE,row.name=FALSE,quote=FALSE, append=TRUE)
+  }}
+
+rm(list=ls())
+dat_res <- read.table("/path/bloodurine_no10pc_res_8.14.txt",header = T)
+covar <- read.table("/path/covar.txt",header = T)
+dat_prs <- read.table("/path/trsprs_10pc_res_0814.txt",header = T)
+covsex <- covar[, c(1,13)]
+dat_prs1 <- dat_prs[, c(1,4)]
+trsprs <- dplyr::inner_join(dat_prs1,covsex)
+trsprs_res <- dplyr::inner_join(trsprs,dat_res)
+trsprs_res_female <- dplyr::filter(trsprs_res,age=="0")
+trsprs_res_male <- dplyr::filter(trsprs_res,age=="1")
+for (i in (4:66)){
+  for (j in (2:2)){
+    tmp=cor.test(trsprs_res_female[,i],trsprs_res_female[,j],method = "pearson", alternative="two.side",conf.level = 0.95)
+    tmp5 <- tmp$estimate
+    tmp6 <- tmp$p.value 
+    tmp4=tmp$conf.int
+    tmp3=tmp[["statistic"]][["t"]]
+    write.table(cbind(paste(names(trsprs_res_female[i]), "_", names(trsprs_res_female[j]),sep=""),tmp5,tmp3,tmp6,tmp4[1],tmp4[2]),file="trsfemaleout_230814.txt",col.name=FALSE,row.name=FALSE,quote=FALSE, append=TRUE)
+  }}
+
+for (i in (4:66)){
+     for (j in (2:2)){
+        tmp=cor.test(trsprs_res_male[,i],trsprs_res_male[,j],method = "pearson", alternative="two.side",conf.level = 0.95)
+        tmp5 <- tmp$estimate
+        tmp6 <- tmp$p.value 
+        tmp4=tmp$conf.int
+        tmp3=tmp[["statistic"]][["t"]]
+        write.table(cbind(paste(names(trsprs_res_male[i]), "_", names(trsprs_res_male[j]),sep=""),tmp5,tmp3,tmp6,tmp4[1],tmp4[2]),file="trsmaleout_230814.txt",col.name=FALSE,row.name=FALSE,quote=FALSE, append=TRUE)
+      }}
+}
+
+
+############################################################################################################
+#####################################Mendelian randomization analyses#######################################
+############################################################################################################
+source activate /home/sqcheng/enter/envs/ldsc
+cd /home/sqcheng/boluncheng/Proj_trsPRS/CM_Revised/MRresults_230607
+R
+rm(list=ls())
+options(stringsAsFactors = F)
+library(TwoSampleMR)
+rm(list=ls())
+exp_dat <- extract_instruments(outcomes='ieu-a-1105',p1=5e-8,r2=0.001,kb = 10000,access_token = NULL)
+head(exp_dat)
+dim(exp_dat)
+out_dat <- read_outcome_data(
+  snps = exp_dat$SNP,
+  filename = "/home/sqcheng/boluncheng/Proj_TRS/trs_interaction.beta.txt", 
+  sep = " ",snp_col = "SNP", beta_col = "beta",
+  se_col = "SE", effect_allele_col = "A1",
+  other_allele_col = "A2",
+  eaf_col = NULL, pval_col = "P")
+head(out_dat)
+dim(out_dat)
+mydata <- harmonise_data(
+  exposure_dat = exp_dat,
+  outcome_dat = out_dat,
+  action= 2)
+res <- mr(mydata)
+res
+write.table(res, file="Creatinine-trs.mr.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+png(file="scatter_plot-Creatinine-trs.png", width=1200, height=1200, res=300)
+mr_scatter_plot(res,mydata)
+dev.off()
+png(file="singlesnp-Creatinine-trs.png", width=1500, height=2800, res=300)
+res_single <- mr_singlesnp(mydata)
+mr_forest_plot(res_single)
+dev.off()
+het <- mr_heterogeneity(mydata)
+het
+write.table(het, file="Creatinine-trs.mr_heterogeneity.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+pleio <- mr_pleiotropy_test(mydata)
+pleio
+write.table(pleio, file="Creatinine-trs.mr_pleiotropy_test.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+singleone <- mr_leaveoneout(mydata)
+write.table(singleone, file="Creatinine-trs.mr_leaveoneout.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+orci <- generate_odds_ratios(res)
+write.table(orci, file="Creatinine-trs.generate_odds_ratios.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+
+rm(list=ls())
+exp_dat <- read_exposure_data(
+  filename = "/home/sqcheng/boluncheng/Proj_TRS/trs_interaction.beta.txt", 
+  sep = " ",snp_col = "SNP", beta_col = "beta",
+  se_col = "SE", effect_allele_col = "A1",
+  other_allele_col = "A2",
+  eaf_col = NULL, pval_col = "P")
+head(exp_dat)
+exp_dat <- subset(exp_dat, exp_dat$pval.exposure < 5e-6)
+dim(exp_dat)
+out_dat <- extract_outcome_data(snps=exp_dat$SNP, outcomes='ieu-a-1105',access_token = NULL)
+head(out_dat)
+dim(out_dat)
+mydata <- harmonise_data(
+  exposure_dat = exp_dat,
+  outcome_dat = out_dat,
+  action= 2)
+res <- mr(mydata)
+res
+write.table(res, file="trs-Creatinine.mr.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+png(file="scatter_plot-trs-Creatinine.png", width=1200, height=1200, res=300)
+mr_scatter_plot(res,mydata)
+dev.off()
+png(file="singlesnp-trs-trs-Creatinine.png", width=1500, height=2800, res=300)
+res_single <- mr_singlesnp(mydata)
+mr_forest_plot(res_single)
+dev.off()
+het <- mr_heterogeneity(mydata)
+het
+write.table(het, file="trs-Creatinine.mr_heterogeneity.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+pleio <- mr_pleiotropy_test(mydata)
+pleio
+write.table(pleio, file="trs-Creatinine.mr_pleiotropy_test.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+singleone <- mr_leaveoneout(mydata)
+write.table(singleone, file="trs-Creatinine.mr_leaveoneout.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+orci <- generate_odds_ratios(res)
+write.table(orci, file="trs-Creatinine.generate_odds_ratios.txt",quote=FALSE, sep=" ",row.name=F,col.name=F)
+
+
