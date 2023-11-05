@@ -258,8 +258,8 @@ for (i in (4:66)){
 ############################################################################################################
 #####################################Mendelian randomization analyses#######################################
 ############################################################################################################
-source activate /home/sqcheng/enter/envs/ldsc
-cd /home/sqcheng/boluncheng/Proj_trsPRS/CM_Revised/MRresults_230607
+source activate /home/envs/ldsc
+cd /home/MRresults_230607
 R
 rm(list=ls())
 options(stringsAsFactors = F)
@@ -270,7 +270,7 @@ head(exp_dat)
 dim(exp_dat)
 out_dat <- read_outcome_data(
   snps = exp_dat$SNP,
-  filename = "/home/sqcheng/boluncheng/Proj_TRS/trs_interaction.beta.txt", 
+  filename = "/home/Proj_TRS/trs_interaction.beta.txt", 
   sep = " ",snp_col = "SNP", beta_col = "beta",
   se_col = "SE", effect_allele_col = "A1",
   other_allele_col = "A2",
@@ -304,7 +304,7 @@ write.table(orci, file="Creatinine-trs.generate_odds_ratios.txt",quote=FALSE, se
 
 rm(list=ls())
 exp_dat <- read_exposure_data(
-  filename = "/home/sqcheng/boluncheng/Proj_TRS/trs_interaction.beta.txt", 
+  filename = "/home/Proj_TRS/trs_interaction.beta.txt", 
   sep = " ",snp_col = "SNP", beta_col = "beta",
   se_col = "SE", effect_allele_col = "A1",
   other_allele_col = "A2",
